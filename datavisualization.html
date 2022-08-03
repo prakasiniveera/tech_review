@@ -1,0 +1,180 @@
+<html>
+<script src='https://d3js.org/d3.v5.min.js'></script>
+<style> 
+
+circle {fill: lightblue; stroke: black;}
+
+div.tooltip {
+	position: absolute;
+	text-align: center;
+	width: 240px
+	height: 2.5em
+	font: 1.5em sans-serif
+	padding: .5rem;
+	background: black;
+	color: yelloe;
+	border: 1px solid green;
+	border-radius: 8px;
+	pointer-events: none;
+	font-size: 1.3rem;
+}
+
+</style>
+<body onload='init()'>
+<svg width=600 height=600>
+</svg>
+<div id = "my_dataviz"></div>
+<script>
+
+async function init(){
+const data=await d3.csv("netflix_release.csv");
+console.log(data)
+
+var margin = {top: 5, right: 20, bottom: 20, left:5},
+    width = 600 - margin.left - margin.right,
+    height = 600 - margin.top - margin.bottom;
+
+//var x = d3.scaleLog().domain([0,data.length]).range([0,500]);
+//var y = d3.scaleLog().domain([0,data.length]).range([500,0]);
+const xScale =d3.scalePoint().domain(data.map(d => d.rating)).range([0,500]).padding(0.5);
+const yScale = d3.scalePoint().domain(data.map(d => d.release_year)).range([500,0]).padding(0.5);
+
+var div = d3.select("svg").append("div").attr("class", "tooltip").style("opacity", 0);
+
+d3.selectAll("svg").append("g").attr("transform","translate(70,50)")
+.selectAll("circle")
+.data(data)
+.enter()
+.append("circle")
+.attr("cx",function(d) { return  xScale(d.rating)})
+.attr("cy",function(d) { return  yScale(d.release_year)})
+.attr("r",5)
+.attr("fill","steelblue")
+.attr("opacity",0.5)
+
+d3.selectAll("svg").append("g").data(data)
+.attr("transform","translate(70,50)")
+.call(d3.axisLeft(yScale)).attr("fill","blue");
+
+d3.selectAll("svg").append("g").data(data)
+.attr("transform","translate(70,550)")
+.call(d3.axisBottom(xScale)).attr("fill","blue").selectAll("text").attr("fill","blue")
+    .attr("transform", "translate(-10,10)rotate(-45)")
+	
+	 // Add the text label for the x axis
+    d3.selectAll("svg").append("text")
+        .attr("transform", "translate(" + (width / 2) + " ," + (height + margin.bottom) + ")")
+        .style("text-anchor", "middle")
+        .text("Movie Rating").attr("fill","green");
+
+
+    // Add the text label for the Y axis
+     d3.selectAll("svg").append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", 0 - margin.left)
+        .attr("x",0 - (height / 2))
+        .attr("dy", "1em")
+        .style("text-anchor", "middle")
+        .text("Year Of Release").attr("fill","green");
+		
+
+var div = d3.select("body").append("div")
+.style("position","absolute")
+.style("text-align","center")
+.style("width","340px")
+.style("height","4.5em")
+.style("font",".5em sans-serif")
+.style("padding",".5rem")
+.style("background","black")
+.style("color","yellow")
+.style("border","1px solid green")
+.style("border-radius","8px")
+.style("pointer-events","none")
+.style("font-size","1.3rem")
+.style("opacity", 0);
+
+
+
+function mouseover(d){
+div.html("Title: " + d.title + "</br>" + "Country: " + d.country + "</br>"+ "Duration: " + d.duration + "</br>" + "Joner: " + d.listed_in).style("left", (d3.event.pageX + 15) + "px").style("top", (d3.event.pageY -5 ) + "px").style("opacity",1);
+}
+
+function mouseout(){
+div.style("opacity",0)
+}
+
+d3.selectAll("circle")
+.on("mouseover",mouseover)
+.on("mouseout",mouseout);
+
+
+
+const dataFilter= await d3.csv("netflix_release_Filtered.csv");
+//console.log(data)
+
+// set the dimensions and margins of the graph
+var margin_sec = {top: 10, right: 30, bottom: 50, left: 70},
+    width = 460 - margin_sec.left - margin_sec.right,
+    height = 410 - margin_sec.top - margin_sec.bottom;
+
+// append the svg object to the body of the page
+var svg = d3.select("#my_dataviz")
+  .append("svg")
+    .attr("width", width + margin_sec.left + margin_sec.right)
+    .attr("height", height + margin_sec.top + margin_sec.bottom)
+  .append("g")
+    .attr("transform",
+          "translate(" + margin_sec.left + "," + margin_sec.top + ")");
+
+  // Now I can use this dataset:
+    // Add X axis --> it is a date format
+	
+	//const yScale = d3.scalePoint().domain(data.map(d => d.release_year)).range([500,0]).padding(0.5);
+	
+	console.log(width)
+    var xNew = d3.scaleBand().domain(dataFilter.map(d => d.Year)).range([ 0, width ]);
+	
+	  console.log(xNew);
+    svg.append("g").attr("transform", "translate(0," + height + ")").call(d3.axisBottom(xNew)).attr("fill","pink");;
+
+    // Add Y axis
+    var yNew = d3.scaleLinear().domain([0, 1000]).range([ height, 0 ]);
+    svg.append("g").call(d3.axisLeft(yNew)).attr("fill","pink");
+	
+	 // Add the text label for the x axis
+    d3.selectAll("svg").append("text")
+        .attr("transform", "translate(200," + (height +250) +")")
+        .style("text-anchor", "middle")
+        .text(" Comparison :Movies (RED)/TVShow(Blue) ").attr("fill","Yellow");
+
+
+    // Add the text label for the Y axis
+     d3.selectAll("svg").append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", 0 - margin_sec.left)
+        .attr("x",0 - (height / 2))
+        .attr("dy", "1em")
+        .style("text-anchor", "middle")
+        .text("Number Of Releases").attr("fill","green");
+
+var line = d3.line().x(function(d) { return xNew(d.Year); })
+.y(function(d) { return yNew(d.Movie); }).curve(d3.curveMonotoneX)
+        
+        svg.append("path")
+		.datum(dataFilter).attr("class", "line")
+		//.attr("transform", "translate(" + 100 + "," + 100 + ")")
+		.attr("d", line).style("fill", "none").style("stroke", "#CC0000").style("stroke-width", "2");
+		
+		var line1 = d3.line().x(function(d) { return xNew(d.Year); })
+.y(function(d) { return yNew(d.TVShow); }).curve(d3.curveMonotoneX)
+        
+        svg.append("path")
+		.datum(dataFilter).attr("class", "line1")
+		//.attr("transform", "translate(" + 100 + "," + 100 + ")")
+		.attr("d", line1).attr("text","TVShow").style("fill", "none").style("stroke", "blue").style("stroke-width", "2");
+	
+
+}
+</script>
+</body>
+</html>
